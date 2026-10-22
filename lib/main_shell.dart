@@ -5,7 +5,7 @@ import 'screens/feature_placeholder_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/quran_screen.dart';
 import 'screens/prayer_screen.dart';
-
+import 'screens/qibla_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -26,14 +26,7 @@ class _MainShellState extends State<MainShell> {
     HomeScreen(onNavigate: _selectTab),
     const QuranScreen(),
     const PrayerScreen(),
-    const FeaturePlaceholderScreen(
-      title: 'Qibla Compass',
-      subtitle: 'Find the direction of the Kaaba.',
-      description:
-      'This section will use your location and device sensors '
-          'to determine the Qibla direction.',
-      icon: Icons.explore_rounded,
-    ),
+    QiblaScreen(isActive: _selectedIndex == 3)
   ];
 
   @override

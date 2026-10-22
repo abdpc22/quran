@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quran/bloc/theme/theme_cubit.dart';
+import 'package:quran/widgets/_featureCard.dart';
 import '../theme.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -164,7 +165,7 @@ class HomeScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _FeatureCard(
+                  child: FeatureCard(
                     title: 'Prayer Times',
                     subtitle: 'Daily schedule',
                     icon: Icons.access_time_rounded,
@@ -173,7 +174,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _FeatureCard(
+                  child: FeatureCard(
                     title: 'Qibla Compass',
                     subtitle: 'Find the direction of the Kaaba',
                     icon: Icons.explore_rounded,
@@ -184,116 +185,8 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.dividerColor,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.offline_pin_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 25,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Designed for offline use',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'The Quran reader and saved location '
-                              'settings help keep essential features '
-                              'available without an internet connection.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeatureCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _FeatureCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppTheme.darkBorder
-                      : AppTheme.paleGold,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  icon,
-                  color: isDark
-                      ? AppTheme.gold
-                      : AppTheme.forestGreen,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

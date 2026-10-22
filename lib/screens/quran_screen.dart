@@ -1,8 +1,10 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quran_library/quran_library.dart';
 
 import '../ayahActions.dart';
+import '../bloc/theme/theme_cubit.dart';
 import '../theme.dart';
 
 class QuranScreen extends StatelessWidget {
@@ -10,24 +12,45 @@ class QuranScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (readerContext) {
-        return QuranLibraryScreen(
-          parentContext: readerContext,
-          isDark: false,
-          appLanguageCode: 'ar',
-          useDefaultAppBar: true,
-          withPageView: true,
-          showAyahBookmarkedIcon: true,
-          backgroundColor: AppTheme.background,
-          textColor: AppTheme.primaryText,
-          ayahIconColor: AppTheme.forestGreen,
-          ayahSelectedBackgroundColor:
-          AppTheme.paleGold,
-          ayahMenuStyle: AyahActions.menuStyle(
-            context: readerContext,
-            isDark: false,
-          ),
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, state) {
+        final isDark = state.isDark;
+
+        final backgroundColor = isDark
+            ? AppTheme.darkBackground
+            : AppTheme.background;
+
+        final textColor = isDark
+            ? AppTheme.darkPrimaryText
+            : AppTheme.primaryText;
+
+        final ayahIconColor = isDark
+            ? AppTheme.gold
+            : AppTheme.forestGreen;
+
+        final selectedAyahColor = isDark
+            ? AppTheme.darkSelectedAyah
+            : AppTheme.paleGold;
+
+        return Builder(
+          builder: (readerContext) {
+            return QuranLibraryScreen(
+              parentContext: readerContext,
+              isDark: isDark,
+              appLanguageCode: 'ar',
+              useDefaultAppBar: true,
+              withPageView: true,
+              showAyahBookmarkedIcon: true,
+              backgroundColor: backgroundColor,
+              textColor: textColor,
+              ayahIconColor: ayahIconColor,
+              ayahSelectedBackgroundColor: selectedAyahColor,
+              ayahMenuStyle: AyahActions.menuStyle(
+                context: readerContext,
+                isDark: isDark,
+              ),
+            );
+          },
         );
       },
     );
