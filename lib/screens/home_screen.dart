@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quran/bloc/theme/theme_cubit.dart';
 import '../theme.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -13,10 +14,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
             Row(
               children: [
@@ -24,58 +28,68 @@ class HomeScreen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.paleGold,
+                    color: isDark
+                        ? AppTheme.darkSurface
+                        : AppTheme.paleGold,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.nightlight_round,
-                    color: AppTheme.forestGreen,
+                    color: isDark
+                        ? AppTheme.gold
+                        : AppTheme.forestGreen,
                     size: 27,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Islamic Companion',
-                        style: TextStyle(
-                          fontSize: 19,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.forestGreen,
                         ),
                       ),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(
                         'Your daily worship, in one place',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.secondaryText,
-                        ),
+                        style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
+                IconButton(
+                  tooltip: isDark
+                      ? 'Switch to light mode'
+                      : 'Switch to dark mode',
+                  onPressed: () {
+                    context.read<ThemeCubit>().toggleTheme();
+                  },
+                  icon: Icon(
+                    isDark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 30),
 
-            const Text(
-              'Assalamu Alaikum',
-              style: TextStyle(
-                fontSize: 27,
+            Text(
+              'السلام عليكم',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.left,
+              style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: AppTheme.primaryText,
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
+            const SizedBox(height: 8),
+            Text(
               'What would you like to do today?',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.secondaryText,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 24),
@@ -88,8 +102,7 @@ class HomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(
                     Icons.menu_book_rounded,
@@ -107,8 +120,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Read, listen, and return to your '
-                        'reading whenever you like.',
+                    'Read, listen, and return to your reading '
+                        'whenever you like.',
                     style: TextStyle(
                       color: Color(0xFFDCE8E1),
                       height: 1.5,
@@ -124,8 +137,7 @@ class HomeScreen extends StatelessWidget {
                         backgroundColor: AppTheme.gold,
                         foregroundColor: AppTheme.deepGreen,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
@@ -139,14 +151,12 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
-            const Text(
+            Text(
               'Your essentials',
-              style: TextStyle(
-                fontSize: 18,
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: AppTheme.primaryText,
               ),
             ),
             const SizedBox(height: 14),
@@ -155,72 +165,60 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _FeatureCard(
-                    title: 'Hadith',
-                    subtitle: 'Read collections',
-                    icon: Icons.auto_stories_rounded,
+                    title: 'Prayer Times',
+                    subtitle: 'Daily schedule',
+                    icon: Icons.access_time_rounded,
                     onTap: () => onNavigate(2),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _FeatureCard(
-                    title: 'Prayer Times',
-                    subtitle: 'Daily schedule',
-                    icon: Icons.access_time_rounded,
+                    title: 'Qibla Compass',
+                    subtitle: 'Find the direction of the Kaaba',
+                    icon: Icons.explore_rounded,
                     onTap: () => onNavigate(3),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            _FeatureCard(
-              title: 'Qibla Compass',
-              subtitle: 'Find the direction of the Kaaba',
-              icon: Icons.explore_rounded,
-              onTap: () => onNavigate(4),
-              horizontal: true,
             ),
             const SizedBox(height: 20),
 
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppTheme.border,
+                  color: theme.dividerColor,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
                     Icons.offline_pin_rounded,
-                    color: AppTheme.mediumGreen,
+                    color: theme.colorScheme.primary,
                     size: 25,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Designed for offline use',
-                          style: TextStyle(
+                          style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryText,
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
-                          'The Quran reader and downloaded '
-                              'content can remain available '
-                              'without an internet connection.',
-                          style: TextStyle(
-                            color: AppTheme.secondaryText,
+                          'The Quran reader and saved location '
+                              'settings help keep essential features '
+                              'available without an internet connection.',
+                          style: theme.textTheme.bodySmall?.copyWith(
                             height: 1.5,
-                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -241,89 +239,63 @@ class _FeatureCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
-  final bool horizontal;
 
   const _FeatureCard({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.onTap,
-    this.horizontal = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: horizontal
-              ? Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _icon(),
-              const SizedBox(width: 14),
-              Expanded(child: _labels()),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 15,
-                color: AppTheme.secondaryText,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.darkBorder
+                      : AppTheme.paleGold,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDark
+                      ? AppTheme.gold
+                      : AppTheme.forestGreen,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  height: 1.4,
+                ),
               ),
             ],
-          )
-              : Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              _icon(),
-              const SizedBox(height: 16),
-              _labels(),
-            ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _icon() {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: AppTheme.paleGold,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(
-        icon,
-        color: AppTheme.forestGreen,
-        size: 24,
-      ),
-    );
-  }
-
-  Widget _labels() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: AppTheme.primaryText,
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            color: AppTheme.secondaryText,
-            fontSize: 12,
-            height: 1.4,
-          ),
-        ),
-      ],
     );
   }
 }
