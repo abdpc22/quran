@@ -7,35 +7,91 @@ import '../ayahActions.dart';
 import '../bloc/theme/theme_cubit.dart';
 import '../theme.dart';
 
-class QuranScreen extends StatelessWidget {
+class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
 
   @override
+  State<QuranScreen> createState() => _QuranScreenState();
+}
+
+class _QuranScreenState extends State<QuranScreen> {
+  late Future<void> _initialization;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialization = QuranLibrary.init();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, state) {
-        final isDark = state.isDark;
+    return FutureBuilder<void>(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'The Quran reader could not be initialized.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _initialization = QuranLibrary.init();
+                        });
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
 
-        final backgroundColor = isDark
-            ? AppTheme.darkBackground
-            : AppTheme.background;
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-        final textColor = isDark
-            ? AppTheme.darkPrimaryText
-            : AppTheme.primaryText;
+        return BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, state) {
+            final isDark = state.themeMode == ThemeMode.dark;
 
-        final ayahIconColor = isDark
-            ? AppTheme.gold
-            : AppTheme.forestGreen;
+            final backgroundColor = isDark
+                ? AppTheme.darkBackground
+                : AppTheme.background;
 
-        final selectedAyahColor = isDark
-            ? AppTheme.darkSelectedAyah
-            : AppTheme.paleGold;
+            final textColor = isDark
+                ? AppTheme.darkPrimaryText
+                : AppTheme.primaryText;
 
-        return Builder(
-          builder: (readerContext) {
+            final ayahIconColor = isDark
+                ? const Color(0xFF78B69A)
+                : AppTheme.forestGreen;
+
+            final selectedAyahColor = isDark
+                ? AppTheme.darkSelectedAyah
+                : AppTheme.paleGold;
+
             return QuranLibraryScreen(
-              parentContext: readerContext,
+              key: ValueKey(isDark),
+              parentContext: context,
               isDark: isDark,
               appLanguageCode: 'ar',
               useDefaultAppBar: true,
@@ -46,7 +102,7 @@ class QuranScreen extends StatelessWidget {
               ayahIconColor: ayahIconColor,
               ayahSelectedBackgroundColor: selectedAyahColor,
               ayahMenuStyle: AyahActions.menuStyle(
-                context: readerContext,
+                context: context,
                 isDark: isDark,
               ),
             );

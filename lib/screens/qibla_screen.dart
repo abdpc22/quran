@@ -96,8 +96,7 @@ class _QiblaViewState extends State<_QiblaView> {
                 relativeBearing >= 355) {
               directionText = 'You are facing the Qibla';
             } else if (relativeBearing < 180) {
-              directionText =
-              'Turn right ${relativeBearing.round()}°';
+              directionText = 'Turn right ${relativeBearing.round()}°';
             } else {
               directionText =
               'Turn left ${(360 - relativeBearing).round()}°';
@@ -115,6 +114,7 @@ class _QiblaViewState extends State<_QiblaView> {
                 ),
                 const SizedBox(height: 24),
 
+                // Compass dial.
                 Center(
                   child: Container(
                     width: 250,
@@ -130,22 +130,83 @@ class _QiblaViewState extends State<_QiblaView> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        Positioned(
-                          top: 16,
-                          child: Text(
-                            'N',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                        // The dial rotates opposite to the phone heading.
+                        if (state.heading != null)
+                          Transform.rotate(
+                            angle: -state.heading! * math.pi / 180,
+                            child: SizedBox.expand(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Positioned(
+                                    top: 16,
+                                    child: Text(
+                                      'N',
+                                      style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 16,
+                                    child: Text(
+                                      'E',
+                                      style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 16,
+                                    child: Text(
+                                      'S',
+                                      style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 16,
+                                    child: Text(
+                                      'W',
+                                      style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          Positioned(
+                            top: 16,
+                            child: Text(
+                              'N',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
+
+                        // Kaaba-direction marker rotates to the Qibla bearing.
                         if (relativeBearing != null)
                           Transform.rotate(
                             angle: relativeBearing * math.pi / 180,
-                            child: Icon(
-                              Icons.navigation_rounded,
-                              size: 100,
-                              color: colors.primary,
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Icon(
+                                  Icons.mosque_rounded,
+                                  size: 30,
+                                  color: colors.primary,
+                                ),
+                              ),
                             ),
                           )
                         else
@@ -154,13 +215,12 @@ class _QiblaViewState extends State<_QiblaView> {
                             size: 90,
                             color: colors.onSurface.withValues(alpha: 0.35),
                           ),
-                        Positioned(
-                          bottom: 18,
-                          child: Icon(
-                            Icons.my_location_rounded,
-                            size: 22,
-                            color: colors.secondary,
-                          ),
+
+                        // The user's position remains in the center.
+                        Icon(
+                          Icons.navigation,
+                          size: 80,
+                          color: colors.secondary,
                         ),
                       ],
                     ),
@@ -270,7 +330,9 @@ class _QiblaViewState extends State<_QiblaView> {
 
                 const SizedBox(height: 20),
                 Text(
-                  'For better accuracy, keep the phone away from magnets and electronic interference. Calibrate the compass if its direction seems incorrect.',
+                  'For better accuracy, keep the phone away from magnets '
+                      'and electronic interference. Calibrate the compass if '
+                      'its direction seems incorrect.',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurface.withValues(alpha: 0.65),
