@@ -1,12 +1,13 @@
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../bloc/qibla/qibla_cubit.dart';
 import '../bloc/qibla/qibla_state.dart';
+import '../widgets/qiblaCompassDial.dart';
+import '../widgets/qiblaDirectionText.dart';
+import '../widgets/qiblaInfoCard.dart';
 
 class QiblaScreen extends StatelessWidget {
   const QiblaScreen({
@@ -35,6 +36,7 @@ class _QiblaView extends StatefulWidget {
 }
 
 class _QiblaViewState extends State<_QiblaView> {
+  // Prevents duplicate initialization when dependencies or widgets update.
   bool _started = false;
 
   @override
@@ -54,6 +56,7 @@ class _QiblaViewState extends State<_QiblaView> {
 
     _started = true;
 
+    // Wait until the current frame finishes before accessing the Cubit.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<QiblaCubit>().initialize();
@@ -81,26 +84,13 @@ class _QiblaViewState extends State<_QiblaView> {
       body: SafeArea(
         child: BlocBuilder<QiblaCubit, QiblaState>(
           builder: (context, state) {
+            // The compass heading is the direction the phone faces.
+            // Subtract it from the geographic Qibla bearing to find
+            // the direction the marker should point relative to the phone.
             final relativeBearing =
             state.qiblaBearing != null && state.heading != null
                 ? (state.qiblaBearing! - state.heading! + 360) % 360
                 : null;
-
-            final String directionText;
-
-            if (relativeBearing == null) {
-              directionText = state.isLoading
-                  ? 'Finding your direction…'
-                  : 'Waiting for compass heading';
-            } else if (relativeBearing <= 5 ||
-                relativeBearing >= 355) {
-              directionText = 'You are facing the Qibla';
-            } else if (relativeBearing < 180) {
-              directionText = 'Turn right ${relativeBearing.round()}°';
-            } else {
-              directionText =
-              'Turn left ${(360 - relativeBearing).round()}°';
-            }
 
             return ListView(
               padding: const EdgeInsets.all(20),
@@ -114,133 +104,25 @@ class _QiblaViewState extends State<_QiblaView> {
                 ),
                 const SizedBox(height: 24),
 
-                // Compass dial.
-                Center(
-                  child: Container(
-                    width: 250,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colors.surface,
-                      border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.35),
-                        width: 2,
-                      ),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // The dial rotates opposite to the phone heading.
-                        if (state.heading != null)
-                          Transform.rotate(
-                            angle: -state.heading! * math.pi / 180,
-                            child: SizedBox.expand(
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Positioned(
-                                    top: 16,
-                                    child: Text(
-                                      'N',
-                                      style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 16,
-                                    child: Text(
-                                      'E',
-                                      style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 16,
-                                    child: Text(
-                                      'S',
-                                      style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: 16,
-                                    child: Text(
-                                      'W',
-                                      style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Positioned(
-                            top: 16,
-                            child: Text(
-                              'N',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-
-                        // Kaaba-direction marker rotates to the Qibla bearing.
-                        if (relativeBearing != null)
-                          Transform.rotate(
-                            angle: relativeBearing * math.pi / 180,
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Icon(
-                                  Icons.mosque_rounded,
-                                  size: 30,
-                                  color: colors.primary,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Icon(
-                            Icons.explore_outlined,
-                            size: 90,
-                            color: colors.onSurface.withValues(alpha: 0.35),
-                          ),
-
-                        // The user's position remains in the center.
-                        Icon(
-                          Icons.navigation,
-                          size: 80,
-                          color: colors.secondary,
-                        ),
-                      ],
-                    ),
-                  ),
+                // The screen passes values to the dial; the dial
+                // does not need to know about the Cubit.
+                QiblaCompassDial(
+                  heading: state.heading,
+                  relativeBearing: relativeBearing,
                 ),
 
                 const SizedBox(height: 24),
 
-                Text(
-                  directionText,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colors.primary,
-                  ),
+                QiblaDirectionText(
+                  relativeBearing: relativeBearing,
+                  isLoading: state.isLoading,
                 ),
 
                 if (state.isLoading) ...[
                   const SizedBox(height: 20),
-                  const Center(child: CircularProgressIndicator()),
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                   const SizedBox(height: 8),
                   const Text(
                     'Loading location…',
@@ -248,6 +130,8 @@ class _QiblaViewState extends State<_QiblaView> {
                   ),
                 ],
 
+                // A location can be available even if the compass sensor
+                // has not produced a usable heading.
                 if (!state.isLoading &&
                     state.qiblaBearing != null &&
                     state.heading == null) ...[
@@ -263,34 +147,10 @@ class _QiblaViewState extends State<_QiblaView> {
 
                 const SizedBox(height: 24),
 
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      children: [
-                        _InfoRow(
-                          label: 'Qibla bearing',
-                          value: state.qiblaBearing == null
-                              ? '—'
-                              : '${state.qiblaBearing!.toStringAsFixed(1)}°',
-                        ),
-                        const Divider(height: 24),
-                        _InfoRow(
-                          label: 'Compass heading',
-                          value: state.heading == null
-                              ? '—'
-                              : '${state.heading!.toStringAsFixed(1)}°',
-                        ),
-                        const Divider(height: 24),
-                        _InfoRow(
-                          label: 'Distance to Kaaba',
-                          value: state.distanceKm == null
-                              ? '—'
-                              : '${state.distanceKm!.toStringAsFixed(0)} km',
-                        ),
-                      ],
-                    ),
-                  ),
+                QiblaInfoCard(
+                  qiblaBearing: state.qiblaBearing,
+                  heading: state.heading,
+                  distanceKm: state.distanceKm,
                 ),
 
                 if (state.error != null) ...[
@@ -329,6 +189,7 @@ class _QiblaViewState extends State<_QiblaView> {
                 ],
 
                 const SizedBox(height: 20),
+
                 Text(
                   'For better accuracy, keep the phone away from magnets '
                       'and electronic interference. Calibrate the compass if '
@@ -343,40 +204,6 @@ class _QiblaViewState extends State<_QiblaView> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }

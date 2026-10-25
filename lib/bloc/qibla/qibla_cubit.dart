@@ -1,12 +1,12 @@
 
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 
-import '../../features/prayer_times/data/location_service.dart';
 import '../../features/prayer_times/data/location_preferences_service.dart';
+import '../../features/prayer_times/data/location_service.dart';
+import '../../features/qibla_calculator/qibla_calculator.dart';
 import 'qibla_state.dart';
 
 class QiblaCubit extends Cubit<QiblaState> {
@@ -18,30 +18,32 @@ class QiblaCubit extends Cubit<QiblaState> {
             preferencesService ?? LocationPreferencesService(),
         super(const QiblaState());
 
-  static const double _kaabaLatitude = 21.422487;
-  static const double _kaabaLongitude = 39.826206;
-  static const double _earthRadiusKm = 6371.0;
-
   final LocationService _locationService;
   final LocationPreferencesService _preferencesService;
 
+  // We keep the subscription so it can be cancelled when the Cubit closes.
   StreamSubscription<CompassEvent>? _compassSubscription;
 
   bool _initialized = false;
-  bool _loadingLocation = false;
 
+  /// Starts compass listening and loads the user's location.
+  ///
+  /// The guard prevents repeated initialization if the screen requests it
+  /// more than once.
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized || isClosed) return;
 
     _initialized = true;
-    _listenToCompass();
 
+    _listenToCompass();
     await refreshLocation();
   }
 
+  /// Listens for the phone's current compass heading.
   void _listenToCompass() {
     final events = FlutterCompass.events;
 
+    // Some devices do not provide a supported compass sensor.
     if (events == null) {
       emit(state.copyWith(compassAvailable: false));
       return;
@@ -51,55 +53,56 @@ class QiblaCubit extends Cubit<QiblaState> {
           (event) {
         final heading = event.heading;
 
+        // A sensor event can occasionally have no heading.
         if (heading == null || isClosed) return;
 
         emit(
           state.copyWith(
-            heading: (heading + 360) % 360,
+            heading: QiblaCalculator.normalizeDegrees(heading),
             compassAvailable: true,
           ),
         );
       },
       onError: (_) {
         if (isClosed) return;
+
         emit(state.copyWith(compassAvailable: false));
       },
     );
   }
 
+  /// Loads a saved location or obtains and saves the current location.
   Future<void> refreshLocation() async {
-    if (_loadingLocation || isClosed) return;
+    // Prevent overlapping location requests.
+    if (state.isLoading || isClosed) return;
 
-    _loadingLocation = true;
     emit(state.copyWith(isLoading: true, clearError: true));
 
     try {
-      // Reuse saved coordinates whenever available. This allows
-      // Qibla calculations to work offline without requesting GPS.
+      // Saved coordinates allow Qibla calculations to work offline.
       final savedLocation = await _preferencesService.loadLocation();
 
+      // GPS is only needed when no saved location is available.
       final location = savedLocation ??
           await _locationService.getCurrentLocation();
 
-      // Cache a newly acquired location for future offline use.
+      // Cache the location so future calculations can work offline.
       if (savedLocation == null) {
         await _preferencesService.saveLocation(location);
       }
 
-      final bearing = _calculateBearing(
-        location.latitude,
-        location.longitude,
-        _kaabaLatitude,
-        _kaabaLongitude,
+      // Geographic calculations are handled outside the Cubit.
+      final bearing = QiblaCalculator.calculateBearing(
+        latitude: location.latitude,
+        longitude: location.longitude,
       );
 
-      final distance = _calculateDistance(
-        location.latitude,
-        location.longitude,
-        _kaabaLatitude,
-        _kaabaLongitude,
+      final distance = QiblaCalculator.calculateDistanceKm(
+        latitude: location.latitude,
+        longitude: location.longitude,
       );
 
+      // An asynchronous operation may finish after the Cubit closes.
       if (isClosed) return;
 
       emit(
@@ -119,17 +122,19 @@ class QiblaCubit extends Cubit<QiblaState> {
           error: _friendlyError(error),
         ),
       );
-    } finally {
-      _loadingLocation = false;
     }
   }
 
+  /// Converts technical location failures into readable messages.
+  ///
+  /// This preserves your existing string-based error handling.
   String _friendlyError(Object error) {
     final message = error.toString().toLowerCase();
 
     if (message.contains('deniedforever') ||
         message.contains('permanently denied')) {
-      return 'Location permission is permanently denied. Enable it in app settings.';
+      return 'Location permission is permanently denied. '
+          'Enable it in app settings.';
     }
 
     if (message.contains('denied')) {
@@ -137,68 +142,19 @@ class QiblaCubit extends Cubit<QiblaState> {
     }
 
     if (message.contains('location services are turned off')) {
-      return 'Location services are disabled. Enable GPS or use a saved location.';
+      return 'Location services are disabled. '
+          'Enable GPS or use a saved location.';
     }
 
-    return 'Could not determine your location. Check GPS or try again.';
+    return 'Could not determine your location. '
+        'Check GPS or try again.';
   }
-
-  double _calculateBearing(
-      double latitude,
-      double longitude,
-      double destinationLatitude,
-      double destinationLongitude,
-      ) {
-    final lat1 = _toRadians(latitude);
-    final lat2 = _toRadians(destinationLatitude);
-    final deltaLongitude =
-    _toRadians(destinationLongitude - longitude);
-
-    final y = math.sin(deltaLongitude) * math.cos(lat2);
-
-    final x = math.cos(lat1) * math.sin(lat2) -
-        math.sin(lat1) *
-            math.cos(lat2) *
-            math.cos(deltaLongitude);
-
-    final bearing = math.atan2(y, x) * 180 / math.pi;
-
-    return (bearing + 360) % 360;
-  }
-
-  double _calculateDistance(
-      double latitude,
-      double longitude,
-      double destinationLatitude,
-      double destinationLongitude,
-      ) {
-    final lat1 = _toRadians(latitude);
-    final lat2 = _toRadians(destinationLatitude);
-    final deltaLat = lat2 - lat1;
-    final deltaLon =
-    _toRadians(destinationLongitude - longitude);
-
-    final a = math.pow(math.sin(deltaLat / 2), 2) +
-        math.cos(lat1) *
-            math.cos(lat2) *
-            math.pow(math.sin(deltaLon / 2), 2);
-
-    final boundedA = a.clamp(0.0, 1.0).toDouble();
-
-    final centralAngle = 2 *
-        math.atan2(
-          math.sqrt(boundedA),
-          math.sqrt(1 - boundedA),
-        );
-
-    return _earthRadiusKm * centralAngle;
-  }
-
-  double _toRadians(double degrees) => degrees * math.pi / 180;
 
   @override
   Future<void> close() async {
+    // Stop listening to sensor events to avoid a lingering subscription.
     await _compassSubscription?.cancel();
+
     return super.close();
   }
 }
