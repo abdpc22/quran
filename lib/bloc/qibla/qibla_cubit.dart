@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,10 +12,9 @@ class QiblaCubit extends Cubit<QiblaState> {
   QiblaCubit({
     LocationService? locationService,
     LocationPreferencesService? preferencesService,
-  })  : _locationService = locationService ?? LocationService(),
-        _preferencesService =
-            preferencesService ?? LocationPreferencesService(),
-        super(const QiblaState());
+  }) : _locationService = locationService ?? LocationService(),
+       _preferencesService = preferencesService ?? LocationPreferencesService(),
+       super(const QiblaState());
 
   final LocationService _locationService;
   final LocationPreferencesService _preferencesService;
@@ -27,7 +25,7 @@ class QiblaCubit extends Cubit<QiblaState> {
   bool _initialized = false;
 
   /// Starts compass listening and loads the user's location.
-  ///
+
   /// The guard prevents repeated initialization if the screen requests it
   /// more than once.
   Future<void> initialize() async {
@@ -50,7 +48,7 @@ class QiblaCubit extends Cubit<QiblaState> {
     }
 
     _compassSubscription = events.listen(
-          (event) {
+      (event) {
         final heading = event.heading;
 
         // A sensor event can occasionally have no heading.
@@ -83,8 +81,8 @@ class QiblaCubit extends Cubit<QiblaState> {
       final savedLocation = await _preferencesService.loadLocation();
 
       // GPS is only needed when no saved location is available.
-      final location = savedLocation ??
-          await _locationService.getCurrentLocation();
+      final location =
+          savedLocation ?? await _locationService.getCurrentLocation();
 
       // Cache the location so future calculations can work offline.
       if (savedLocation == null) {
@@ -116,12 +114,7 @@ class QiblaCubit extends Cubit<QiblaState> {
     } catch (error) {
       if (isClosed) return;
 
-      emit(
-        state.copyWith(
-          isLoading: false,
-          error: _friendlyError(error),
-        ),
-      );
+      emit(state.copyWith(isLoading: false, error: _friendlyError(error)));
     }
   }
 
